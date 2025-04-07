@@ -38,7 +38,7 @@ class BasicFermions:
             array(int): initial configuration of the determinant
             nconserved(bool): if True(default) the number of particles is
             conserved
-            parttype(str): name of the particle (important for commutation
+            parttype(str): name of the particle (for commutation
             rules)
             comrules(dict): name of the particle associated with the phase
             of the commutation
@@ -53,6 +53,18 @@ class BasicFermions:
     @classmethod
     def firstdet(cls, nparticles, nsites, nconserved=True, parttype='fermions',
                  comrules={'fermions': -1}):
+        '''Alternate constructor + initialization of the BasicFermions classe
+
+            Parameters:
+            nparticles(int): number of particles (ignored if nconserved=False)
+            nsites(int): number of sites
+            nconserved(bool): if True(default) the number of particles is
+            conserved
+            parttype(str): name of the particle (for commutation
+            rules)
+            comrules(dict): name of the particle associated with the phase
+            of the commutation
+        '''
         if (nconserved):
             array = np.zeros(nsites, dtype=int)
             array[:nparticles] = 1
