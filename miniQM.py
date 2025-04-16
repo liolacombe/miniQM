@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# coding: utf-8
+#coding: utf-8
 
 
 from scipy.special import binom
@@ -12,37 +12,57 @@ np.set_printoptions(linewidth=120)
 
 
 class BasicFermions:
-    '''
-    Store fermionic slater determinant in the form of a 1/0 vector
+    """
+    Stores fermionic slater determinant in the form of a 1/0 vector
+    This class contains the rules of the Hilbert space to which the determinant belongs
+    Each element (determinant) of a Hilbert space possesses its unique index 
 
     Attributes:
-        nsites(int): number of sites (or single particle wavefunctions)
-        nparticles(int): number of particles in this determinant
-        nconserved(bool): tells if the number of particle is conserved
+        nsites : int
+            number of sites (or single particle wavefunctions)
+        nsiteslist : int
+            list of the number of sites of each Hilbert space
+            only returns [nsites] if the object is not a tensorproduct
+        nparticles : int 
+            number of particles in this determinant
+        nconserved : bool
+            tells if the number of particle is conserved
             True: Hilbert space with 'nparticles' particles / False: Fock space
-        array(int): array of 1 or 0 that represents the determinant
-        list(int): list of 1 or 0 that represents the determinant
-        nspace(int): number of sub-Hilbert space (always 1 for this class)
-        max(int): size of the space considered
-        index(int): return the unique determinant index in the considered space
-        parttype(str): name of the particle (important for commutation rules)
-        comrules(dict): name of the particle associated with the phase of the
-        commutation
-    '''
+        array : int
+            array of 1 or 0 that represents the determinant
+        list : int
+            list of 1 or 0 that represents the determinant
+        nspace : int
+            number of sub-Hilbert space (always 1 for this class)
+        max : int 
+            size of the space considered
+        index : int
+            return the unique determinant index in the considered space
+        parttype : str 
+            name of the particle (important for commutation rules)
+        comrules : dict
+            name of the particle associated with the phase of the
+            commutation
+    
+    """
 
     def __init__(self, array, nconserved=True, parttype='fermions',
                  comrules={'fermions': -1}):
-        '''Constructor of the BasicFermions classe
+        """
+        Constructor of the BasicFermions object
 
-            Parameters:
-            array(int): initial configuration of the determinant
-            nconserved(bool): if True(default) the number of particles is
-            conserved
-            parttype(str): name of the particle (for commutation
-            rules)
-            comrules(dict): name of the particle associated with the phase
-            of the commutation
-        '''
+        Parameters:
+            array : int
+                initial configuration of the determinant
+            nconserved : bool
+                if True(default) the number of particles is
+                conserved
+            parttype : str
+                name of the particle (for commutation rules)
+            comrules : dict 
+                name of the particle associated with the phase
+                of the commutation
+        """
         self.__nconserved = nconserved
         self.__nspace = 1
         self.__parttype = parttype
@@ -53,18 +73,22 @@ class BasicFermions:
     @classmethod
     def firstdet(cls, nparticles, nsites, nconserved=True, parttype='fermions',
                  comrules={'fermions': -1}):
-        '''Alternate constructor + initialization of the BasicFermions classe
+        """
+        Alternate constructor + initialization of the BasicFermions object
 
-            Parameters:
-            nparticles(int): number of particles (ignored if nconserved=False)
-            nsites(int): number of sites
-            nconserved(bool): if True(default) the number of particles is
-            conserved
-            parttype(str): name of the particle (for commutation
-            rules)
-            comrules(dict): name of the particle associated with the phase
-            of the commutation
-        '''
+        Parameters:
+            nparticles : int
+                number of particles (ignored if nconserved=False)
+            nsites : int
+                number of sites
+            nconserved : bool
+                if True(default) the number of particles is conserved
+            parttype : str
+                name of the particle (for commutation rules)
+            comrules : dict
+                name of the particle associated with the phase
+                of the commutation
+        """
         if (nconserved):
             array = np.zeros(nsites, dtype=int)
             array[:nparticles] = 1
@@ -123,6 +147,11 @@ class BasicFermions:
 
     @array.setter
     def array(self, array):
+        """
+        You can change the determinant by hand (the array of 0s and 1s)
+        but it may change the Hilbert space 
+        USE CAUTIOUSLY
+        """
         if (type(array) == np.ndarray and
                 np.array_equal(array, array.astype(bool))):
             self.__array = array
@@ -141,6 +170,11 @@ class BasicFermions:
                 ", " + str(self.nconserved) + ")")
 
     def __eq__(self, other):
+        """
+        Equality boolean operator
+        Returns True if two elements are the same in the same Hilbert space
+        (same array, same rules)
+        """
         if (type(self) == type(other)):
             return (np.array_equal(self.array, other.array)
                     and self.nconserved == other.nconserved
@@ -160,6 +194,10 @@ class BasicFermions:
 
     @staticmethod
     def same_space(elem1, elem2):
+        """
+        Returns True if two elements are in the same Hilbert space
+        They do not need to have the same configuration (i.e. same array)
+        """
         if (elem1.nconserved and elem1.nconserved):
             return (type(elem1) == type(elem2)
                     and elem1.nparticles == elem2.nparticles
@@ -191,12 +229,18 @@ class BasicFermions:
         return int(num)
 
     def __calc_max(self):
+        """
+        Computes the size of the Hilbert space
+        """
         if (self.nconserved):
             return int(binom(self.nsites, self.nparticles))
         else:
             return 2**self.nsites
 
     def reset(self):
+        """
+        Sets the element to the first element in the Hilbert space
+        """
         if (self.nconserved):
             tarray = np.zeros(self.nsites, dtype=int)
             tarray[:self.nparticles] = 1
@@ -208,12 +252,22 @@ class BasicFermions:
         return self
 
     def vacuum(self):
+        """
+        Sets the element to the vacuum state
+        """
         self.array = np.zeros(self.nsites, dtype=int)
         self.__nparticles = 0
         self.__calc_index()
         return self
 
     def next_element(self):
+        """
+        Transforms the current element into the next one the Hilbert space
+        with the index = index + 1 if it exists
+        Returns True if the next element exists
+        Returns False and leaves the element unchanged if the next element
+        does not exist
+        """
         tarray = self.array.copy()
         if (self.nconserved):
             nextfree = False
@@ -239,6 +293,19 @@ class BasicFermions:
             return False
 
     def range(self, elem1=None, elem2=None):
+        """
+        Iterator over the elements of the Hilbert space
+
+        Arguments:
+        *If no element is given, it does the full loop starting from
+            the first element (the only actually useful case)
+        *If one element is given, then it will go from the first element
+            to this element NOT INCLUDED
+        *If two elements (elem1, elem2) are given, then it will start from elem1 and end
+            at elem2 NOT INCLUDED
+        To start at elem1 and go to the end of the Hilbert space (last element included)
+        set elem2 to "end"
+        """
         if (elem2 is None):
             if (elem1 is None):
                 elem = self.deepcopy()
@@ -260,6 +327,22 @@ class BasicFermions:
                 else:
                     raise ValueError("range can only end with"
                                      "elements of the same space")
+        elif (elem2 == "end"):
+            if (elem1 is None):
+                elem = self.deepcopy()
+                elem.reset()
+                exist = True
+                while(exist):
+                    yield elem
+                    exist = elem.next_element()
+                return
+            else:
+                elem = elem1.deepcopy()
+                exist = True
+                while(exist):
+                    yield elem
+                    exist = elem.next_element()
+                return
         else:
             if (self.__class__.same_space(elem1, elem2)):
                 if (elem1.index < elem2.index):
@@ -273,6 +356,13 @@ class BasicFermions:
                                  "elements of the same space")
 
     def go_through(self, parttype):
+        """
+        Computes the sign or coefficient created by an operator that acts on another
+        Hilbert space when it commutes with (or goes through) the product of operators
+        defining this determinant
+        Returns a copy of this element and the coefficient(real number)
+        in the form (elem, coeff)
+        """
         if (parttype in self.__comrules):
             coeff = (self.__comrules[parttype])**self.__nparticles
             return (self.copy(), coeff)
@@ -281,6 +371,17 @@ class BasicFermions:
             return (self.copy(), coeff)
 
     def operator(self, op):
+        """
+        Computes how a given operator acts on this element
+        The operator is in the form of a list [ind, 1] (for creation operator)
+        or [ind, -1] (for annihilation operator) where ind is the index of the site
+        where the particle is created/annihilated
+        Returns (elem, coeff) where  elem is the modified element 
+        (not necessarily in the same Hilbert space) and coeff 
+        is the corresponding coefficient created in front of the determinant
+        by the action of the operator.
+        When this action returns 0 (like annihilating a 0), it returns (None, 0)
+        """
         tarray = self.array.copy()
         coeff = 1
         ind = op[1]
@@ -306,37 +407,70 @@ class BasicFermions:
 
 
 class BasicBosons:
-    '''
-    Store bosonic slater determinant in the form of a 1/0 vector
+    """
+    Stores bosonic permanent in the form of a vector of occupation numbers
+    This class contains the rules of the Hilbert space to which the permanent belongs
+    Each element of a given Hilbert space possesses its unique index 
 
     Attributes:
-        nsites(int): number of sites (or single particle wavefunctions)
-        nparticles(int): number of particles in this determinant
-        nconserved(bool): tells if the number of particle is conserved
-            True: Hilbert space with 'nparticles' particles / False: Fock space
-        array(int): array of 1 or 0 that represents the determinant
-        list(int): list of 1 or 0 that represents the determinant
-        nspace(int): number of sub-Hilbert space (always 1 for this class)
-        max(int): size of the space considered
-        index(int): return the unique determinant index in the considered space
-        parttype(str): name of the particle (important for commutation rules)
-        comrules(dict): name of the particle associated with the phase of the
-        commutation
-    '''
+        nparticles : int 
+            number of particles in this permanent
+        nsites : int
+            number of sites/modes (or single particle wavefunctions)
+        nmax : int
+            array indicating the maximum number of bosons allowed in each site/mode
+        ntotmax : int
+            maximum number of bosons allowed over all the modes
+        ntotlimited : bool
+            If True, the TOTAL number of bosons is limited to ntotmax
+            If False, each mode has its own limit of the number of bosons it
+            can accept (see the array nmax), independent of the other modes
+        array : int
+            array of occupation numbers that represents the permanent
+        list : int
+            list of occupation numbers that represents the permanent
+        nsiteslist : int
+            list of the number of sites/modes of each Hilbert space
+            only returns [nsites] if the object is not a tensorproduct
+        nspace : int
+            number of sub-Hilbert space (always 1 for this class)
+        max : int 
+            size of the space considered
+        index : int
+            return the unique index of the element in in the considered space
+        parttype : str 
+            name of the particle (important for commutation rules)
+        comrules : dict
+            name of the particle associated with the phase of the
+            commutation
+    
+    """
 
     def __init__(self, array, nmax, ntotlimited=False, ntotmax=0,
                  parttype='bosons', comrules={'bosons': 1}):
-        '''Constructor of the BasicFermions classe
+        """
+        Constructor of the BasicBosons object
 
-            Parameters:
-            array(int): initial configuration of the determinant
-            nconserved(bool): if True(default) the number of particles is
-            conserved
-            parttype(str): name of the particle (important for commutation
-            rules)
-            comrules(dict): name of the particle associated with the phase
-            of the commutation
-        '''
+        Parameters:
+            array : int
+                initial configuration of the permanent
+            nmax : int
+                array indicating the maximum number of bosons allowed in each site/mode
+            ntotlimited : bool
+                if True, only the total number of bosons over all modes is limited to ntotmax
+                and nmax is overwritten
+                if False, each mode has an independent limit set by nmax 
+                default is False
+            ntotmax : int
+                only used if ntotlimited == True, sets the maximum number of bosons
+                over all modes
+                default is 0
+            parttype : str
+                name of the particle (for commutation rules)
+            comrules : dict 
+                name of the particle associated with the phase
+                of the commutation
+        """
         if (ntotlimited):
             self.__nmax = ntotmax*np.ones_like(array)
         else:
@@ -352,6 +486,31 @@ class BasicBosons:
     @classmethod
     def firstdet(cls, nsites, nmax, ntotlimited=False, ntotmax=0,
                  parttype='bosons', comrules={'bosons': 1}):
+        """
+        Alternate constructor + initialization of the BasicBosons object
+
+        For a BasicBosons object, the initial array is an array of zeros
+
+        Parameters:
+            nsites : int
+                number of sites/modes
+            nmax : int
+                array indicating the maximum number of bosons allowed in each site/mode
+            ntotlimited : bool
+                if True, only the total number of bosons over all modes is limited and
+                nmax is overwritten
+                if False, each mode has an independent limit set by nmax 
+                default is False
+            ntotmax : int
+                only used if ntotlimited == True, sets the maximum number of bosons
+                over all modes
+                default is 0
+            parttype : str
+                name of the particle (for commutation rules)
+            comrules : dict 
+                name of the particle associated with the phase
+                of the commutation
+        """
         array = np.zeros(nsites, dtype=int)
         return cls(array, nmax, ntotlimited, ntotmax,
                  parttype, comrules)
@@ -414,6 +573,12 @@ class BasicBosons:
 
     @array.setter
     def array(self, array):
+        """
+        You can change the permanent by hand (the array of particle numbers) 
+        but it may change the Hilbert space.
+        If will not accept an array that does not respect the rules for nmax or ntotmax
+        USE CAUTIOUSLY
+        """
         if (self.ntotlimited):
             if (type(array) == np.ndarray and
                     np.sum(array) <= self.ntotmax):
@@ -421,17 +586,19 @@ class BasicBosons:
                 self.__nsites = self.__array.size
                 self.__max = self.__calc_max()
                 self.__index = self.__calc_index()
+                self.__nmax = self.ntotmax*np.ones_like(array)
             else:
                 raise ValueError("only numpy arrays of integers with sum<ntotmax are accepted")
         else:
             if (type(array) == np.ndarray and
+                    array.size == (self.nmax).size and
                     np.prod(np.less_equal(array, self.nmax))):
                 self.__array = array
                 self.__nsites = self.__array.size
                 self.__max = self.__calc_max()
                 self.__index = self.__calc_index()
             else:
-                raise ValueError("only numpy arrays of integers <nmax are accepted")
+                raise ValueError("only numpy arrays of integers <nmax (and same size) are accepted")
 
     def __str__(self):
         return str(self.list)
@@ -443,6 +610,11 @@ class BasicBosons:
                 ")")
 
     def __eq__(self, other):
+        """
+        Equality boolean operator
+        Returns True if two elements are the same in the same Hilbert space
+        (same array, same rules)
+        """
         if (type(self) == type(other)):
             if (self.ntotlimited):
                 return (np.array_equal(self.array, other.array)
@@ -473,6 +645,10 @@ class BasicBosons:
 
     @staticmethod
     def same_space(elem1, elem2):
+        """
+        Returns True if two elements are in the same Hilbert space
+        They do not need to have the same configuration (i.e. same array)
+        """
         if (elem1.ntotlimited):
             return (type(elem1) == type(elem2)
                     and np.array_equal(elem1.nmax, elem2.nmax)
@@ -507,22 +683,38 @@ class BasicBosons:
         return int(num)
 
     def __calc_max(self):
+        """
+        Computes the size of the Hilbert space
+        """
         if (self.ntotlimited):
             return int(binom(self.ntotmax+self.nsites, self.ntotmax))
         else:
             return np.prod(self.nmax+1)
 
     def reset(self):
+        """
+        Sets the element to the first element in the Hilbert space
+        """
         self.array = np.zeros(self.nsites, dtype=int)
         self.__calc_index()
         return self
 
     def vacuum(self):
+        """
+        Sets the element to the vacuum state
+        """
         self.array = np.zeros(self.nsites, dtype=int)
         self.__calc_index()
         return self
 
     def next_element(self):
+        """
+        Transforms the current element into the next one the Hilbert space
+        with the index = index + 1 if it exists
+        Returns True if the next element exists
+        Returns False and leaves the element unchanged if the next element
+        does not exist
+        """
         if (self.ntotlimited):
             np = self.nparticles
             tarray = self.array.copy()
@@ -552,6 +744,19 @@ class BasicBosons:
             return False
 
     def range(self, elem1=None, elem2=None):
+        """
+        Iterator over the elements of the Hilbert space
+
+        Arguments:
+        *If no element is given, it does the full loop starting from
+            the first element (the only actually useful case)
+        *If one element is given, then it will go from the first element
+            to this element NOT INCLUDED
+        *If two elements (elem1, elem2) are given, then it will start from elem1 and end
+            at elem2 NOT INCLUDED
+        To start at elem1 and go to the end of the Hilbert space (last element included)
+        set elem2 to "end"
+        """
         if (elem2 is None):
             if (elem1 is None):
                 elem = self.deepcopy()
@@ -573,6 +778,22 @@ class BasicBosons:
                 else:
                     raise ValueError("range can only end with"
                                      "elements of the same space")
+        elif (elem2 == "end"):
+            if (elem1 is None):
+                elem = self.deepcopy()
+                elem.reset()
+                exist = True
+                while(exist):
+                    yield elem
+                    exist = elem.next_element()
+                return
+            else:
+                elem = elem1.deepcopy()
+                exist = True
+                while(exist):
+                    yield elem
+                    exist = elem.next_element()
+                return
         else:
             if (self.__class__.same_space(elem1, elem2)):
                 if (elem1.index < elem2.index):
@@ -586,10 +807,28 @@ class BasicBosons:
                                  "elements of the same space")
 
     def go_through(self, parttype):
+        """
+        Computes the sign or coefficient created by an operator that acts on another
+        Hilbert space when it commutes with (or goes through) the product of operators
+        defining this state
+        Returns a copy of this element and the coefficient(real number)
+        in the form (elem, coeff)
+        """
         coeff = 1
         return (self.copy(), coeff)
 
     def operator(self, op):
+        """
+        Computes how a given operator acts on this element
+        The operator is in the form of a list [ind, 1] (for creation operator)
+        or [ind, -1] (for annihilation operator) where ind is the index of the site
+        where the particle is created/annihilated
+        Returns (elem, coeff) where  elem is the modified element 
+        (not necessarily in the same Hilbert space) and coeff 
+        is the corresponding coefficient created in front of the determinant
+        by the action of the operator.
+        When this action returns 0 (like annihilating a 0), it returns (None, 0)
+        """
         tarray = self.array.copy()
         coeff = 1
         ind = op[1]
@@ -623,8 +862,53 @@ class BasicBosons:
 
 
 class TensorProductState:
+    """
+    Stores tensor product states in the form of a recursive list of states
+    It is created as a the result of a product between 
+    two Hilbert spaces objects (BasicBosons or BasicFermions)
+    or TensorProductState objects
+    It combines the properties of the Hilbert spaces it is the product of
+    Each element of this Hilbert space possesses its unique index
+
+    Attributes:
+        state1 : object
+            State/Hilbert space on the left of the product sign
+            Either of Basic type or a TensorProductState
+        state2 : object
+            State/Hilbert space on the right of the product sign
+            Always of Basic type
+            States are stored as
+            state1*state2 = ((((..*state)*state)*state)*state2
+        list : int 
+            list of lists
+            each sublist is the occupation numbers of each 
+            sub Hilbert space
+        nsiteslist : int
+            list of the number of sites of each sub Hilbert space
+        array : int
+            array of the occupation numbers of each site/modes
+            no separation is visible between the different Hilbert spaces
+            see nsiteslist to know which position corresponds to which
+            Hilbert space
+        nspace : int
+            number of sub-Hilbert spaces in the product
+        nparticles : int
+            total number of particles
+        nsites : int
+            total number of sites+modes
+        index : int
+            return the unique index of the element in in the considered space
+        parttype : str 
+            list of the names of the particles
+        max : int 
+            size of the product space    
+    """
 
     def __init__(self, state1, state2):
+        """
+        Constructor of the TensorProductState object
+        as a product of state1 and state2
+        """
         if state2.nspace == 1:
             self.__state1 = state1.deepcopy()
             self.__state2 = state2.deepcopy()
@@ -706,6 +990,11 @@ class TensorProductState:
         return repr(self.__state1) + "*" + repr(self.__state2)
 
     def __eq__(self, other):
+        """
+        Equality boolean operator
+        Returns True if two elements are the same in the same Hilbert space
+        (same array, same rules)
+        """
         if (type(self) == type(other)):
             return (self.__state1 == other.__state1
                     and self.__state2 == other.__state2)
@@ -722,6 +1011,10 @@ class TensorProductState:
 
     @staticmethod
     def same_space(elem1, elem2):
+        """
+        Returns True if two elements are in the same Hilbert space
+        They do not need to have the same configuration (i.e. same array)
+        """
         if (type(elem1) == type(elem2)):
             return (elem1.__state1.same_space(elem1.state1, elem2.state1) and
                     elem1.__state2.same_space(elem1.state2, elem2.state2))
@@ -735,18 +1028,31 @@ class TensorProductState:
         return self.__state1.max*self.__state2.max
 
     def reset(self):
+        """
+        Sets the element to the first element in the Hilbert space
+        """
         self.__state1.reset()
         self.__state2.reset()
         self.__index = self.__calc_index()
         return self
 
     def vacuum(self):
+        """
+        Sets the element to the vacuum state
+        """
         self.__state1.vacuum()
         self.__state2.vacuum()
         self.__index = self.__calc_index()
         return self
 
     def next_element(self):
+        """
+        Transforms the current element into the next one the Hilbert space
+        with the index = index + 1 if it exists
+        Returns True if the next element exists
+        Returns False and leaves the element unchanged if the next element
+        does not exist
+        """
         if (self.__state2.next_element()):
             self.__index = self.__calc_index()
             return True
@@ -758,6 +1064,19 @@ class TensorProductState:
             return False
 
     def range(self, elem1=None, elem2=None):
+        """
+        Iterator over the elements of the Hilbert space
+
+        Arguments:
+        *If no element is given, it does the full loop starting from
+            the first element (the only actually useful case)
+        *If one element is given, then it will go from the first element
+            to this element NOT INCLUDED
+        *If two elements (elem1, elem2) are given, then it will start from elem1 and end
+            at elem2 NOT INCLUDED
+        To start at elem1 and go to the end of the Hilbert space (last element included)
+        set elem2 to "end"
+        """
         if (elem2 is None):
             if (elem1 is None):
                 elem = self.deepcopy()
@@ -779,6 +1098,22 @@ class TensorProductState:
                 else:
                     raise ValueError("range can only end with"
                                      "elements of the same space")
+        elif (elem2 == "end"):
+            if (elem1 is None):
+                elem = self.deepcopy()
+                elem.reset()
+                exist = True
+                while(exist):
+                    yield elem
+                    exist = elem.next_element()
+                return
+            else:
+                elem = elem1.deepcopy()
+                exist = True
+                while(exist):
+                    yield elem
+                    exist = elem.next_element()
+                return
         else:
             if (self.__class__.same_space(elem1, elem2)):
                 if (elem1.index < elem2.index):
@@ -792,11 +1127,29 @@ class TensorProductState:
                                  "elements of the same space")
 
     def go_through(self, parttype):
+        """
+        Computes the sign or coefficient created by an operator that acts on another
+        Hilbert space when it commutes with (or goes through) the product of operators
+        defining this state
+        Returns a copy of this element and the coefficient(real number)
+        in the form (elem, coeff)
+        """
         coeff2, elem2 = self.__state2.go_through(parttype)
         coeff1, elem1 = self.__state1.go_through(parttype)
         return (self.__class__(elem1, elem2), (coeff1*coeff2))
 
     def operator(self, op):
+        """
+        Computes how a given operator acts on this element
+        The operator is in the form of a list [ind, 1] (for creation operator)
+        or [ind, -1] (for annihilation operator) where ind is the index of the site
+        where the particle is created/annihilated
+        Returns (elem, coeff) where  elem is the modified element 
+        (not necessarily in the same Hilbert space) and coeff 
+        is the corresponding coefficient created in front of the determinant
+        by the action of the operator.
+        When this action returns 0 (like annihilating a 0), it returns (None, 0)
+        """
         parttype = self.__parttype[op[0]]
         ispace = op[0] + 1
         if (ispace > self.nspace or ispace < 1):
@@ -1143,11 +1496,6 @@ class RHFHamiltonian:
                     j = self.__sindex.v(temp_op[1])
                     hamat[i,j] += val
         return hamat
-
-
-def gram_schmidt(X):
-    Q, R = np.linalg.qr(X)
-    return Q
 
 def convertback_orbeig(orbeig):
     eig = orbeig[1]
