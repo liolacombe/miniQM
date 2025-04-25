@@ -1,5 +1,5 @@
-#!/usr/bin/env python
-#coding: utf-8
+# !/usr/bin/env python
+# coding: utf-8
 
 
 from scipy.special import binom
@@ -1191,6 +1191,12 @@ class TensorProductState:
 
 
 def apply(h_list, elem):
+    """
+    Applies a sum of products of creation/annihilation 
+    operators of the form [[coeff,[op1,op2,..]],..] to a basis element of a Hilbert space.
+    Returns a list of couples of the form (ind, val)
+    where ind is the index of the element in the Hilbert and val the corresponding coeffcient
+    """
     outlist = []
     for i in h_list:
         val = i[0]
@@ -1208,6 +1214,13 @@ def apply(h_list, elem):
 
 
 def apply_to_ket(h_list, ketin, elemin):
+    """
+    Applies a sum of products of creation/annihilation 
+    operators of the form [[coeff,[op1,op2,..]],..] to a ket of a Hilbert space
+    represented by a numpy array.
+    The Hilbert space is defined by elemin.
+    Returns a numpy array representing ketout = h_list*ketin
+    """
     ket = np.zeros(elemin.max, dtype=complex)
     for elem in elemin.range():
         for i in h_list:
@@ -1225,6 +1238,19 @@ def apply_to_ket(h_list, ketin, elemin):
 
 
 def apply_to_ket_2spaces(h_list, ketin, elemin, elemout):
+    """
+    Applies a sum of products of creation/annihilation 
+    operators of the form [[coeff,[op1,op2,..]],..] to a ket of a Hilbert space
+    represented by a numpy array.
+    The Hilbert space of ketin is defined by elemin.
+    Returns a numpy array representing ketout = h_list*ketin 
+    in the space defined by elemout.
+
+    This is used when ketin and ketout do not live in the same Hilbert space:
+    for example applying only an annihilation operator will not preserve the number of
+    particles but elemin is defined with nconserved=True.
+    Useful for Green's functions.
+    """
     ket = np.zeros(elemout.max, dtype=complex)
     for elem in elemin.range():
         for i in h_list:
@@ -1239,6 +1265,29 @@ def apply_to_ket_2spaces(h_list, ketin, elemin, elemout):
             if (telem is not None):
                 ket[telem.index] += coeff*val
     return ket
+
+
+def oplist_to_csr(h_list, elem):
+    """
+    Transforms a hamiltonian written as a sum of products of creation/annihilation 
+    operators of the form [[coeff,[op1,op2,..]],..] where op1 is of the form
+    [ispace, isite, +-1] into a compressed sparsed row (csr) matrix.
+    Elem defines in which Hilbert space we are working.
+    """
+    lrow = []
+    lcol = []
+    ldata = []
+    for el in elem.range():
+        tlist = apply(h_list, el)
+        for ind, coeff in tlist:
+            lcol.append(el.index)
+            lrow.append(ind)
+            ldata.append(coeff)
+    row = np.array(lrow)
+    col = np.array(lcol)
+    data = np.array(ldata)
+    return csr_matrix((data, (row, col)),
+                      shape=(elem.max, elem.max), dtype=complex)
 
 
 def uterm(u, ispace1, ispace2, ipos):
@@ -1268,24 +1317,6 @@ def chain(ut, tt, nsites, periodic=True):
     return ht
 
 
-def hlist_to_csr(h_list, elem):
-    lrow = []
-    lcol = []
-    ldata = []
-    for el in elem.range():
-        tlist = apply(h_list, el)
-        for ind, coeff in tlist:
-            lcol.append(el.index)
-            lrow.append(ind)
-            ldata.append(coeff)
-    row = np.array(lrow)
-    col = np.array(lcol)
-    data = np.array(ldata)
-    return csr_matrix((data, (row, col)),
-                      shape=(elem.max, elem.max), dtype=complex)
-
-
-
 # If not imported run an example
 if __name__ == "__main__":
     from scipy.sparse.linalg import eigs
@@ -1301,7 +1332,7 @@ if __name__ == "__main__":
     ht= ht + vterm(-1.5,0,1)
     ht= ht + vterm(-1.5,1,1)
     # transforms into a csr format
-    ht_csr = hlist_to_csr(ht,det)
+    ht_csr = oplist_to_csr(ht,det)
     print(ht_csr.toarray())
     val = eigs(ht_csr,k=1,which='SR',return_eigenvectors=False)
     print(val)
