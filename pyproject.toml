@@ -7,7 +7,7 @@ name = "miniQM"
 version = "1.0.0"
 dependencies = [
     "numpy >= 2.1",
-    "scipy >= 1.14",
+    "scipy >= 1.10",
 ]
 requires-python = ">=3.12"
 authors = [

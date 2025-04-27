@@ -17,7 +17,7 @@ You can download and go through tutorial.ipynb to understand the functionalities
 
 ### Dependencies
 
-* Have scipy (v1.14 or higher) and numpy (v2.1 or higher) installed
+* Have scipy (v1.10 or higher) and numpy (v2.1 or higher) installed
 
 ## Authors
 
