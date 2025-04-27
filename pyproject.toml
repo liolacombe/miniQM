@@ -1,0 +1,33 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "miniQM"
+version = "1.0.0"
+dependencies = [
+    "numpy >= 2.1",
+    "scipy >= 1.14",
+]
+requires-python = ">=3.12"
+authors = [
+  {name = "Lionel Lacombe", email = "liolacombe@gmail.com"},
+]
+maintainers = [
+  {name = "Lionel Lacombe", email = "liolacombe@gmail.com"}
+]
+description = "A Python library to test quantum models in small Hilbert spaces."
+readme = "README.md"
+license = "LGPL-2.1-only"
+license-files = ["LICENSE"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: GNU Lesser General Public License v2 (LGPLv2)",
+    "Operating System :: OS Independent",
+]
+
+[project.urls]
+Homepage = "https://github.com/liolacombe/miniQM"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/miniQM"]
